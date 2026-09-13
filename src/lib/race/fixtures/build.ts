@@ -203,6 +203,13 @@ function stintsOf(pitLaps: number[], compounds: string[]): PlannedStint[] {
   }));
 }
 
+/** What the fixture needs to know about the race being asked for. */
+export interface FixtureRequest {
+  season?: number;
+  /** The event name the setup screen chose, which selects the recorded circuit. */
+  event?: string;
+}
+
 export interface FixtureRace {
   session: SessionInfo;
   events: RaceEvent[];
@@ -212,10 +219,14 @@ export interface FixtureRace {
   durationS: number;
 }
 
-export function buildFixtureRace(): FixtureRace {
-  const track = buildTrack('Autodromo Fixture');
-  const baselineTiming = buildTiming(BASELINE_PLAN);
-  const alternativeTiming = buildTiming(ALTERNATIVE_PLAN);
+export function buildFixtureRace(request: FixtureRequest = {}): FixtureRace {
+  const season = request.season ?? 2026;
+  const event = request.event ?? 'British Grand Prix';
+  // The outline, lap distance and base pace all come from the circuit the setup chose,
+  // so the map is the real shape and the lap times sit where that circuit's do.
+  const track = buildTrack(event);
+  const baselineTiming = buildTiming(BASELINE_PLAN, track.baseLapS);
+  const alternativeTiming = buildTiming(ALTERNATIVE_PLAN, track.baseLapS);
   const durationS = Math.max(worldDuration(baselineTiming), worldDuration(alternativeTiming));
 
   const rankOf = (timing: WorldTiming): number => {
@@ -251,9 +262,9 @@ export function buildFixtureRace(): FixtureRace {
 
   const session: SessionInfo = {
     identity: {
-      season: 2026,
-      event: 'Fixture Grand Prix',
-      circuit: 'Autodromo Fixture',
+      season,
+      event,
+      circuit: track.geometry.name,
       session: 'Race',
       rulesVersion: '2026',
     },
@@ -291,7 +302,12 @@ export function buildFixtureRace(): FixtureRace {
     coverage: {
       availableSessions: ['Race'],
       missingInputs: ['Per-entry battery truth', 'Defensive racing lines'],
-      permittedEvidence: ['Timing feed', 'Official classification', 'Fitted car profile'],
+      permittedEvidence: [
+        'Timing feed',
+        'Official classification',
+        'Fitted car profile',
+        `Recorded circuit outline — ${track.source}`,
+      ],
     },
     participants: ROSTER.map(({ id, code, name, team, raceNumber, teamColor }) => ({
       id,
@@ -430,7 +446,7 @@ export function buildFixtureRace(): FixtureRace {
           Number(
             (
               ((selectedBaseline?.lap ?? 0) - (selectedAlternative?.lap ?? 0)) *
-              (88 + entry.paceOffsetS)
+              (track.baseLapS + entry.paceOffsetS)
             ).toFixed(2),
           ),
           ALTERNATIVE_SCENARIO.id,

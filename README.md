@@ -23,12 +23,22 @@ The review fixture itself renders a 23-car field; diagnostic reports retain 22 s
 independently controlled P23 ego.
 They carry the selected mode, track and profile into a source-bound diagnostic report. The race
 report separates the added P23 ego from the fixed 22-car reference field and shows every reported
-lap, opportunity, action and race-control alignment. Configure another local backend or run ID:
+lap, opportunity, action and race-control alignment.
+
+With no backend configured the reports are read from the snapshot of the runtime's own report
+tree in `public/diagnostics/reports`, so every screen works with nothing running — see
+`docs/OFFLINE_DEMO.md`. Point at a live backend, and a run ID for the live policy stream, with:
 
 ```bash
 NEXT_PUBLIC_POWESHIFT_API_URL=http://localhost:8000
 NEXT_PUBLIC_POWESHIFT_RUN_ID=selection-run
 ```
+
+A configured backend that is unreachable falls back to the snapshot rather than failing; the race
+page's backend panel names which of the two answered.
+
+The race map is drawn from recorded circuit outlines in `src/lib/race/circuits.ts`, regenerated
+with `python3 scripts/generate_circuits.py`.
 
 The animated race world remains clearly labelled as a review fixture until the backend supplies an
 admitted full-world stream. Report times are source timestamps and may start after 0:00 when the

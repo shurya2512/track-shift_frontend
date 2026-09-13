@@ -23,9 +23,10 @@ export class FixtureRaceSource implements RaceSource {
     for (const handler of this.handlers) handler(msg);
   }
 
-  start(_request: SessionRequest): void {
+  start(request: SessionRequest): void {
     this.stopTimer();
-    this.race = buildFixtureRace();
+    // The request selects the circuit, so the map and lap times follow the setup screen.
+    this.race = buildFixtureRace({ season: request.season, event: request.event });
     this.raceTimeS = 0;
     this.emit({ type: 'session', session: this.race.session });
     this.emit({ type: 'events', events: this.race.events });

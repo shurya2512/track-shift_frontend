@@ -17,26 +17,18 @@ import { OvertakeCarousel } from '@/components/race/overtake/OvertakeCarousel';
 import { Panel } from '@/components/race/primitives';
 import { BackendRuntimePanel } from '@/components/race/BackendRuntimePanel';
 
-const REQUEST = {
-  season: 2026,
-  event: 'Fixture Grand Prix',
-  scenarioId: 'alt-one-stop',
-};
-
 /** The one race this page shows. */
 const SIDE: WorldSide = 'alternative';
 
 /** States that replace the race regions rather than sitting above them. */
 const BLOCKING: SupportState[] = ['unsupported', 'abstained', 'failed'];
 
-function Preparing() {
+function Preparing({ event }: { event: string }) {
   return (
     <Panel className="p-10 text-center">
       <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-sky-400" />
       <h2 className="text-sm font-bold uppercase tracking-widest text-white">Preparing race</h2>
-      <p className="mt-2 text-xs text-white/40">
-        {REQUEST.season} {REQUEST.event}
-      </p>
+      <p className="mt-2 text-xs text-white/40">2026 {event}</p>
     </Panel>
   );
 }
@@ -47,7 +39,13 @@ export function FullRaceView() {
   const profileEntry = search.get('profile') ?? '1';
   const reportParams = new URLSearchParams({ mode: 'race', track: diagnosticTrack, profile: profileEntry });
   const source = useMemo(() => new FixtureRaceSource(), []);
-  const { state, controls } = useRaceSession(source, REQUEST);
+  // The chosen event picks the circuit, so changing it rebuilds the session on its
+  // outline. The session keys on the request's contents, not its identity.
+  const { state, controls } = useRaceSession(source, {
+    season: 2026,
+    event: diagnosticTrack,
+    scenarioId: 'alt-one-stop',
+  });
   const { session, frame } = state;
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
@@ -66,7 +64,7 @@ export function FullRaceView() {
     [state.battles, state.selectedParticipantId],
   );
 
-  if (!session) return <Preparing />;
+  if (!session) return <Preparing event={diagnosticTrack} />;
 
   const blocked = BLOCKING.includes(state.supportState);
   const ours = frame?.[SIDE].field.find((p) => p.participantId === state.selectedParticipantId);

@@ -44,14 +44,22 @@ export function BackendRuntimePanel({ track, profileEntry }: { track?: string; p
   const raceReady = catalog?.race.filter((track) => track.status === 'diagnostic_only').length ?? 0;
   const raceUnavailable = catalog?.race.filter((track) => track.status === 'unavailable').length ?? 0;
 
+  // The snapshot is the same stored report tree, read from the build instead of a
+  // service, so the panel names which one answered rather than implying a live run.
+  const origin = catalog?.origin === 'live' ? 'Live runtime' : 'Stored snapshot';
+
   return (
     <Panel className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400">Policy backend</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400">
+          Policy backend{catalog ? ` · ${origin}` : ''}
+        </p>
         <p className="mt-1 text-sm text-white">
-          {!available ? 'Backend unavailable' : catalog
+          {catalog
             ? `${catalog.qualifying.length} qualifying reports · ${raceReady} race reports · ${raceUnavailable} unavailable`
-            : 'Connecting to diagnostic reports'}
+            : available
+              ? 'Reading diagnostic reports'
+              : 'No diagnostic reports could be read'}
         </p>
       </div>
       <div className="text-right text-xs text-white/55">
@@ -63,7 +71,7 @@ export function BackendRuntimePanel({ track, profileEntry }: { track?: string; p
         ) : (
           <>
             {track && profileEntry && <p className="font-semibold text-white">{track} · {egoProfile(profileEntry).code} #{profileEntry}</p>}
-            <p>{RUN_ID ? 'Waiting for registered run' : 'Open report for stored decisions'}</p>
+            <p>{RUN_ID && available ? 'Waiting for registered run' : 'Open report for stored decisions'}</p>
           </>
         )}
       </div>

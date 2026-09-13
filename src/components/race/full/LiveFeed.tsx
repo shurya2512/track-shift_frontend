@@ -48,13 +48,23 @@ export function LiveFeed({
 
   return (
     <Panel className="flex h-full flex-col overflow-hidden">
-      <div className="flex items-center justify-end gap-2 border-b border-white/[0.07] px-5 py-3">
-        <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${flag.className}`}>
-          {flag.label}
-        </span>
-        <span className="text-[11px] font-semibold tabular-nums text-white/70">
-          Lap {world.leaderLap}/{world.totalLaps}
-        </span>
+      <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-5 py-3">
+        {/* The outline is the recorded circuit, so it is named as one rather than left
+            as an anonymous shape. */}
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-semibold text-white/70">{track.name}</p>
+          <p className="text-[9px] uppercase tracking-widest text-white/30">
+            {(track.lapLengthM / 1000).toFixed(3)} km lap
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${flag.className}`}>
+            {flag.label}
+          </span>
+          <span className="text-[11px] font-semibold tabular-nums text-white/70">
+            Lap {world.leaderLap}/{world.totalLaps}
+          </span>
+        </div>
       </div>
 
       <div className="min-h-[280px] flex-1 px-2 pt-2">

@@ -2,6 +2,7 @@ import { WorldSide } from '../types';
 import { ROSTER } from './roster';
 
 export const TOTAL_LAPS = 30;
+/** Used only where no circuit-specific pace is supplied. */
 export const BASE_LAP_S = 88.0;
 export const PIT_LOSS_S = 22.0;
 
@@ -100,7 +101,7 @@ export type WorldTiming = Map<string, number[]>;
 const SELECTED_START_DEFICIT_S = 30.0;
 const SELECTED_PACE_GAIN_S = 0.4;
 
-export function buildTiming(plan: WorldPlan): WorldTiming {
+export function buildTiming(plan: WorldPlan, baseLapS: number = BASE_LAP_S): WorldTiming {
   const timing: WorldTiming = new Map();
 
   for (const entry of ROSTER) {
@@ -115,7 +116,7 @@ export function buildTiming(plan: WorldPlan): WorldTiming {
       // a 20-lap stint costs about 1.5 s/lap at the end, which is realistic.
       const tyreLoss = (entry.degPerLapS / 6) * stintAge * stintAge;
       const neutralised = neutralisationAt(plan, lap);
-      let lapTime = BASE_LAP_S + entry.paceOffsetS + tyreLoss;
+      let lapTime = baseLapS + entry.paceOffsetS + tyreLoss;
       if (entry.id === SELECTED_ID) {
         lapTime -= SELECTED_PACE_GAIN_S;
         if (lap === 1) lapTime += SELECTED_START_DEFICIT_S;

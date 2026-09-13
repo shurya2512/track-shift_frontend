@@ -56,9 +56,13 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export function RaceWorldMap({ track, world, participants, selectedId, onSelect }: RaceWorldMapProps) {
   const lookup = useMemo(() => new Map(participants.map((p) => [p.id, p])), [participants]);
 
-  // The outline never changes, so it is built once per circuit.
+  // The outline never changes, so it is built once per circuit. Outlines are in metres
+  // and every circuit is a different size, so the padding is a share of the circuit
+  // rather than a fixed distance — a fixed one swallows Monaco and vanishes at Spa.
   const view = useMemo(() => {
-    const pad = 260;
+    const spanX = Math.max(...track.x) - Math.min(...track.x);
+    const spanY = Math.max(...track.y) - Math.min(...track.y);
+    const pad = Math.max(spanX, spanY) * 0.05;
     const minX = Math.min(...track.x) - pad;
     const maxX = Math.max(...track.x) + pad;
     const minY = Math.min(...track.y) - pad;
@@ -66,21 +70,36 @@ export function RaceWorldMap({ track, world, participants, selectedId, onSelect 
     const path = `M ${track.x.map((x, i) => `${x},${track.y[i]}`).join(' L ')} Z`;
     const cx = track.x.reduce((a, b) => a + b, 0) / track.x.length;
     const cy = track.y.reduce((a, b) => a + b, 0) / track.y.length;
+    const scale = Math.max(maxX - minX, maxY - minY);
 
-    // Pit lane: a chord across the start/finish, pulled in towards the middle.
-    const a = pointAt(track, 0.94);
-    const b = pointAt(track, 0.06);
-    const pull = 0.16;
+    // Pit lane: a short line beside the start/finish straight, offset onto whichever
+    // side of it the infield is. Pulling the ends towards the circuit's centroid
+    // instead would cut a chord straight across the infield on a long circuit.
+    const a = pointAt(track, 0.97);
+    const b = pointAt(track, 0.03);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const length = Math.hypot(dx, dy) || 1;
+    // Unit normal to the straight, flipped to point at the infield.
+    let nx = -dy / length;
+    let ny = dx / length;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    if (nx * (cx - midX) + ny * (cy - midY) < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const offset = scale * 0.035;
     const pit = {
-      x1: lerp(a.x, cx, pull),
-      y1: lerp(a.y, cy, pull),
-      x2: lerp(b.x, cx, pull),
-      y2: lerp(b.y, cy, pull),
+      x1: a.x + nx * offset,
+      y1: a.y + ny * offset,
+      x2: b.x + nx * offset,
+      y2: b.y + ny * offset,
     };
 
     return {
       box: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`,
-      scale: Math.max(maxX - minX, maxY - minY),
+      scale,
       path,
       pit,
       start: pointAt(track, 0),
